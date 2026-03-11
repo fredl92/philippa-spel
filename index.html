@@ -226,6 +226,82 @@
       to   { transform:scale(1)  translateY(0);    opacity:1; }
     }
 
+    /* ── WELCOME SCREEN ── */
+    #welcomeScreen {
+      position: fixed; inset: 0; z-index: 30;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: linear-gradient(160deg, #aee4ff 0%, #d6f0ff 40%, #fff9e6 100%);
+      gap: clamp(18px, 4vh, 36px);
+    }
+    #welcomeScreen.hiding {
+      animation: welcomeOut .7s cubic-bezier(.7,0,.3,1) forwards;
+    }
+    @keyframes welcomeOut {
+      0%   { opacity:1; transform:scale(1); }
+      100% { opacity:0; transform:scale(1.08); pointer-events:none; }
+    }
+    .welcome-rabbit {
+      font-size: clamp(90px, 20vw, 160px);
+      animation: welcomeBob 2.2s ease-in-out infinite;
+      filter: drop-shadow(0 12px 24px rgba(0,0,0,.12));
+    }
+    @keyframes welcomeBob {
+      0%,100% { transform: translateY(0) rotate(-4deg); }
+      50%      { transform: translateY(-18px) rotate(4deg); }
+    }
+    .welcome-title {
+      font-size: clamp(28px, 6vw, 56px);
+      font-weight: 900; color: var(--ink);
+      text-align: center; line-height: 1.2;
+      text-shadow: 0 3px 0 rgba(255,255,255,.7);
+    }
+    .welcome-title span {
+      display: block;
+      font-size: clamp(44px, 10vw, 88px);
+      background: linear-gradient(135deg, #ff8fab 0%, #ffcc00 50%, #6ec6ff 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; background-size: 200% 200%;
+      animation: shimmer 3s ease-in-out infinite;
+    }
+    @keyframes shimmer {
+      0%,100% { background-position: 0% 50%; }
+      50%      { background-position: 100% 50%; }
+    }
+    .welcome-stars {
+      font-size: clamp(22px, 4vw, 34px); letter-spacing: 8px;
+      animation: starTwinkle 1.8s ease-in-out infinite;
+    }
+    @keyframes starTwinkle {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:.5; transform:scale(.9); }
+    }
+    .welcome-btn {
+      border: none; border-radius: 999px;
+      padding: clamp(18px,3vh,26px) clamp(40px,8vw,70px);
+      font-size: clamp(22px,4vw,34px); font-weight: 900;
+      background: linear-gradient(135deg, #ffe566, #ffb830);
+      color: #2a3a50;
+      box-shadow: 0 10px 36px rgba(255,200,0,.4), 0 2px 0 #cc9900;
+      cursor: pointer; letter-spacing: .02em;
+      animation: btnPulse 2s ease-in-out infinite;
+    }
+    @keyframes btnPulse {
+      0%,100% { transform:scale(1);    box-shadow:0 10px 36px rgba(255,200,0,.4),0 2px 0 #cc9900; }
+      50%      { transform:scale(1.05); box-shadow:0 14px 44px rgba(255,200,0,.55),0 2px 0 #cc9900; }
+    }
+    .welcome-btn:active { transform: scale(.96) !important; }
+    .wconf {
+      position: absolute; pointer-events: none;
+      font-size: clamp(20px,3vw,30px);
+      animation: wconfFloat linear infinite; opacity: .7;
+    }
+    @keyframes wconfFloat {
+      0%   { transform:translateY(110vh) rotate(0deg);   opacity:0; }
+      10%  { opacity:.7; }
+      90%  { opacity:.7; }
+      100% { transform:translateY(-10vh) rotate(360deg); opacity:0; }
+    }
+
     /* ── INSTALL BANNER (shown first time) ── */
     .install-banner {
       position: fixed; bottom: max(80px, env(safe-area-inset-bottom, 0px) + 80px);
@@ -251,6 +327,21 @@
   </style>
 </head>
 <body>
+
+<!-- ── WELCOME SCREEN ── -->
+<div id="welcomeScreen">
+  <div class="wconf" style="left:8%;  animation-duration:7s;  animation-delay:0s">🌟</div>
+  <div class="wconf" style="left:22%; animation-duration:9s;  animation-delay:-3s">🎈</div>
+  <div class="wconf" style="left:40%; animation-duration:6s;  animation-delay:-1s">✨</div>
+  <div class="wconf" style="left:60%; animation-duration:11s; animation-delay:-5s">🌸</div>
+  <div class="wconf" style="left:75%; animation-duration:8s;  animation-delay:-2s">⭐</div>
+  <div class="wconf" style="left:88%; animation-duration:10s; animation-delay:-4s">💛</div>
+  <div class="welcome-rabbit">🐰</div>
+  <div class="welcome-title">Welkom<br><span>Philippa!</span></div>
+  <div class="welcome-stars">⭐ 🌟 ✨ 🌟 ⭐</div>
+  <button class="welcome-btn" id="startBtn">Spelen! 🎉</button>
+</div>
+
 <div id="app">
   <div class="sky"></div>
   <div class="cloud c1"></div>
@@ -297,21 +388,31 @@
    DATA
 ───────────────────────────────────────── */
 const items = [
-  { emoji:"🐰", name:"Piet Konijn",  fx:["✨","🌟","💛","🥕"], colors:["#ffe566","#ffb3ec","#a3f0a3"], speech:"boing"  },
-  { emoji:"🎈", name:"Ballon",       fx:["🎈","✨","☁️","🌈"],  colors:["#ff6eb4","#ffe566","#6ec6ff"], speech:"plop"   },
-  { emoji:"🐠", name:"Visje",        fx:["💦","🐟","🫧","⭐"],   colors:["#6ec6ff","#a3f0ff","#ffe566"], speech:"blub"   },
-  { emoji:"🌸", name:"Bloem",        fx:["🌸","💖","✨","🦋"],   colors:["#ffb3ec","#ff6eb4","#fff566"], speech:"pling"  },
-  { emoji:"⭐", name:"Ster",         fx:["⭐","✨","🌟","💫"],   colors:["#ffe566","#fff0a0","#ffd700"], speech:"ting"   },
-  { emoji:"🦆", name:"Eendje",       fx:["💦","🫧","✨","🌿"],   colors:["#ffe566","#6ec6ff","#a3f0a3"], speech:"kwaak"  },
-  { emoji:"🐻", name:"Beer",         fx:["💛","✨","⭐","🍯"],   colors:["#ffcc88","#ffe566","#ffb870"], speech:"bom"    },
-  { emoji:"🚗", name:"Auto",         fx:["💨","✨","⭐","🛣️"],   colors:["#ff6e6e","#6ec6ff","#ffe566"], speech:"vroem"  },
-  { emoji:"🦁", name:"Leeuw",        fx:["👑","✨","🌟","💛"],   colors:["#ffcc66","#ff9933","#ffe566"], speech:"bom"    },
-  { emoji:"🐸", name:"Kikker",       fx:["🌿","💧","✨","🍃"],   colors:["#a3f0a3","#6ec6ff","#ffe566"], speech:"blub"   },
-  { emoji:"🦋", name:"Vlinder",      fx:["🌸","💖","✨","🌈"],   colors:["#ffb3ec","#b3d9ff","#ffe566"], speech:"pling"  },
-  { emoji:"🐄", name:"Koe",          fx:["🌿","⭐","💛","🍀"],   colors:["#fff","#ffcc66","#a3f0a3"],    speech:"bom"    },
-  { emoji:"🐶", name:"Hond",         fx:["🦴","💛","✨","⭐"],   colors:["#ffcc88","#ffe566","#ffb3ec"], speech:"bom"    },
-  { emoji:"🐱", name:"Poes",         fx:["🐾","💖","✨","🌸"],   colors:["#ffb3ec","#ffe566","#a3f0a3"], speech:"pling"  },
-  { emoji:"🐥", name:"Kuikentje",    fx:["🌿","⭐","💛","✨"],   colors:["#ffe566","#fff0a0","#a3f0a3"], speech:"ting"   },
+  { emoji:"🐰", name:"Piet Konijn", fx:["✨","🌟","💛","🥕"], colors:["#ffe566","#ffb3ec","#a3f0a3"], speech:"boing"  },
+  { emoji:"🎈", name:"Ballon",      fx:["🎈","✨","☁️","🌈"],  colors:["#ff6eb4","#ffe566","#6ec6ff"], speech:"plop"   },
+  { emoji:"🐟", name:"Vis",         fx:["💦","🫧","⭐","💙"],  colors:["#6ec6ff","#a3f0ff","#ffe566"], speech:"blub"   },
+  { emoji:"🌸", name:"Bloem",       fx:["🌸","💖","✨","🦋"],  colors:["#ffb3ec","#ff6eb4","#fff566"], speech:"pling"  },
+  { emoji:"⭐", name:"Ster",        fx:["⭐","✨","🌟","💫"],  colors:["#ffe566","#fff0a0","#ffd700"], speech:"ting"   },
+  { emoji:"🦆", name:"Eend",        fx:["💦","🫧","✨","🌿"],  colors:["#ffe566","#6ec6ff","#a3f0a3"], speech:"kwaak"  },
+  { emoji:"🐻", name:"Beer",        fx:["💛","✨","⭐","🍯"],  colors:["#ffcc88","#ffe566","#ffb870"], speech:"bom"    },
+  { emoji:"🚗", name:"Auto",        fx:["💨","✨","⭐","🛣️"],  colors:["#ff6e6e","#6ec6ff","#ffe566"], speech:"vroem"  },
+  { emoji:"🦁", name:"Leeuw",       fx:["👑","✨","🌟","💛"],  colors:["#ffcc66","#ff9933","#ffe566"], speech:"bom"    },
+  { emoji:"🐸", name:"Kikker",      fx:["🌿","💧","✨","🍃"],  colors:["#a3f0a3","#6ec6ff","#ffe566"], speech:"blub"   },
+  { emoji:"🦋", name:"Vlinder",     fx:["🌸","💖","✨","🌈"],  colors:["#ffb3ec","#b3d9ff","#ffe566"], speech:"pling"  },
+  { emoji:"🐄", name:"Koe",         fx:["🌿","⭐","💛","🍀"],  colors:["#fff","#ffcc66","#a3f0a3"],   speech:"bom"    },
+  { emoji:"🐶", name:"Hond",        fx:["🦴","💛","✨","⭐"],  colors:["#ffcc88","#ffe566","#ffb3ec"], speech:"bom"    },
+  { emoji:"🐱", name:"Kat",         fx:["🐾","💖","✨","🌸"],  colors:["#ffb3ec","#ffe566","#a3f0a3"], speech:"pling"  },
+  { emoji:"🐥", name:"Kuiken",      fx:["🌿","⭐","💛","✨"],  colors:["#ffe566","#fff0a0","#a3f0a3"], speech:"ting"   },
+  { emoji:"🍎", name:"Appel",       fx:["🍎","✨","💚","⭐"],  colors:["#ff6e6e","#a3f0a3","#ffe566"], speech:"pling"  },
+  { emoji:"🌙", name:"Maan",        fx:["⭐","🌟","💫","✨"],  colors:["#fff0a0","#ffe566","#b3d9ff"], speech:"ting"   },
+  { emoji:"🚂", name:"Trein",       fx:["💨","⭐","✨","🛤️"],  colors:["#ff6e6e","#ffe566","#6ec6ff"], speech:"vroem"  },
+  { emoji:"🐑", name:"Schaap",      fx:["☁️","✨","💛","🌿"],  colors:["#fff","#a3f0a3","#ffe566"],   speech:"bom"    },
+  { emoji:"🍌", name:"Banaan",      fx:["🍌","✨","💛","⭐"],  colors:["#ffe566","#ffcc00","#fff0a0"], speech:"pling"  },
+  { emoji:"☀️", name:"Zon",         fx:["☀️","✨","🌟","💛"],  colors:["#ffe566","#ffcc00","#fff0a0"], speech:"ting"   },
+  { emoji:"🐘", name:"Olifant",     fx:["💦","⭐","✨","🌿"],  colors:["#b3d9ff","#a0a0c0","#ffe566"], speech:"bom"    },
+  { emoji:"🎵", name:"Muziek",      fx:["🎵","🎶","✨","⭐"],  colors:["#ffb3ec","#b3d9ff","#ffe566"], speech:"pling"  },
+  { emoji:"🌈", name:"Regenboog",   fx:["🌈","✨","💖","🌟"],  colors:["#ff6eb4","#ffe566","#6ec6ff"], speech:"ting"   },
+  { emoji:"🐢", name:"Schildpad",   fx:["🌿","💧","✨","🍃"],  colors:["#a3f0a3","#ffe566","#6ec6ff"], speech:"blub"   },
 ];
 
 /* ─────────────────────────────────────────
@@ -394,19 +495,29 @@ function chime() {
 const phrases = {
   "Piet Konijn": ["Hoera, Piet Konijn!","Dag Piet Konijn!","Boing, daar is Piet Konijn!"],
   "Ballon":      ["Kijk, een ballon!","Wat een mooie ballon!","Een ronde ballon!"],
-  "Visje":       ["Blub blub, een visje!","Daar zwemt een visje!"],
-  "Bloem":       ["Wat een mooie bloem!","Kijk eens, een bloem!"],
+  "Vis":         ["Blub blub, een vis!","Daar zwemt een vis!","Kijk, een vis!"],
+  "Bloem":       ["Wat een mooie bloem!","Kijk eens, een bloem!","Een mooie bloem!"],
   "Ster":        ["Een fonkelende ster!","Zie je de ster?","Twinkel twinkel, een ster!"],
-  "Eendje":      ["Kwaak kwaak, een eendje!","Daar is een eendje!"],
-  "Beer":        ["Dag lieve beer!","Dit is een beer!"],
-  "Auto":        ["Brr, een auto!","Vroom vroom, een auto!"],
-  "Leeuw":       ["Dat is een leeuw!","Braaah, een leeuw!"],
-  "Kikker":      ["Kijk, een kikker!","Spring maar, kikker!"],
+  "Eend":        ["Kwaak kwaak, een eend!","Daar is een eend!","Kijk, een eend!"],
+  "Beer":        ["Dag lieve beer!","Dit is een beer!","Kijk, een beer!"],
+  "Auto":        ["Brr, een auto!","Vroom vroom, een auto!","Kijk, een auto!"],
+  "Leeuw":       ["Dat is een leeuw!","Braaah, een leeuw!","Kijk, een leeuw!"],
+  "Kikker":      ["Kijk, een kikker!","Spring maar, kikker!","Kwak kwak, een kikker!"],
   "Vlinder":     ["Wat een mooie vlinder!","Flap flap, een vlinder!"],
-  "Koe":         ["Boe, een koe!","Dag mooie koe!"],
-  "Hond":        ["Woef woef, een hond!","Dag lieve hond!"],
-  "Poes":        ["Miauw, een poes!","Dag schattige poes!"],
-  "Kuikentje":   ["Piep piep, een kuikentje!","Wat een lief kuikentje!"],
+  "Koe":         ["Boe, een koe!","Dag mooie koe!","Kijk, een koe!"],
+  "Hond":        ["Woef woef, een hond!","Dag lieve hond!","Kijk, een hond!"],
+  "Kat":         ["Miauw, een kat!","Dag schattige kat!","Kijk, een kat!"],
+  "Kuiken":      ["Piep piep, een kuiken!","Wat een lief kuiken!","Kijk, een kuiken!"],
+  "Appel":       ["Kijk, een appel!","Wat een mooie appel!","Een rode appel!"],
+  "Maan":        ["Kijk, de maan!","Dag lieve maan!","De maan schijnt!"],
+  "Trein":       ["Tuut tuut, een trein!","Kijk, een trein!","Daar gaat de trein!"],
+  "Schaap":      ["Bèè bèè, een schaap!","Kijk, een schaap!","Dag zacht schaap!"],
+  "Banaan":      ["Kijk, een banaan!","Een gele banaan!","Wat een banaan!"],
+  "Zon":         ["Kijk, de zon!","De zon schijnt!","Wat een mooie zon!"],
+  "Olifant":     ["Kijk, een olifant!","Wat een grote olifant!","Dag olifant!"],
+  "Muziek":      ["Lalala, muziek!","Kijk, muziek!","Hoor je de muziek?"],
+  "Regenboog":   ["Kijk, een regenboog!","Wat een mooie regenboog!","Alle kleuren!"],
+  "Schildpad":   ["Kijk, een schildpad!","Rustig aan, schildpad!","Dag schildpad!"],
 };
 
 /* ── Voice cache: geladen zodra beschikbaar ── */
@@ -580,6 +691,29 @@ document.getElementById("closeBanner").addEventListener("click", () => {
   document.getElementById("installBanner").style.display = "none";
   localStorage.setItem("installDismissed", "1");
 });
+
+/* ─────────────────────────────────────────
+   WELCOME SCREEN
+───────────────────────────────────────── */
+const welcomeScreen = document.getElementById("welcomeScreen");
+const startBtn      = document.getElementById("startBtn");
+
+function startGame() {
+  ensureAudio();
+  beep("pling");
+  welcomeScreen.classList.add("hiding");
+  welcomeScreen.addEventListener("animationend", () => {
+    welcomeScreen.style.display = "none";
+  }, { once: true });
+  // Speak welcome message after short delay
+  setTimeout(() => speak("__welkom__"), 600);
+}
+
+startBtn.addEventListener("click", startGame);
+startBtn.addEventListener("touchend", (e) => { e.preventDefault(); startGame(); });
+
+// Add welcome phrase
+phrases["__welkom__"] = ["Hallo Philippa!", "Veel plezier Philippa!", "Goed bezig Philippa!"];
 
 /* ─────────────────────────────────────────
    INIT
