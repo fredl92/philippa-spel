@@ -520,25 +520,18 @@ const phrases = {
   "Schildpad":   ["Kijk, een schildpad!","Rustig aan, schildpad!","Dag schildpad!"],
 };
 
-/* ── Voice cache: geladen zodra beschikbaar ── */
+/* ── Voice: gebruik exact de bekende nl stemmen op iOS ── */
 let _nlVoice = null;
-let _voicesReady = false;
-
-function _pickVoice(voices) {
-  // Op iOS: neem gewoon de eerste nl stem — geen voorkeur nodig
-  return voices.find(x => x.lang.startsWith("nl"))
-      || voices.find(x => x.lang.startsWith("nl-"))
-      || null;
-}
 
 function _loadVoices() {
   const voices = speechSynthesis.getVoices();
-  if (voices.length) {
-    _nlVoice = _pickVoice(voices);
-    _voicesReady = true;
-    return true;
-  }
-  return false;
+  if (!voices.length) return false;
+  // Voorkeur: Ellen (nl-BE) of Xander (nl-NL) — beide aanwezig op deze iPad
+  _nlVoice = voices.find(v => v.name === "Ellen")
+          || voices.find(v => v.name === "Xander")
+          || voices.find(v => v.lang.startsWith("nl"))
+          || null;
+  return true;
 }
 
 if ("speechSynthesis" in window) {
@@ -548,25 +541,19 @@ if ("speechSynthesis" in window) {
 
 function speak(name) {
   if (!soundOn || !("speechSynthesis" in window)) return;
-
-  // Laad stemmen opnieuw als nog niet klaar
-  if (!_voicesReady) _loadVoices();
+  if (!_nlVoice) _loadVoices();
 
   const list = phrases[name] || [name];
   const text = list[rand(list.length)];
 
-  // iOS Safari: cancel eerst, dan direct spreken — GEEN setTimeout
-  try {
-    window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang   = "nl-NL";
-    utter.rate   = 0.82;
-    utter.pitch  = 1.1;
-    utter.volume = 1.0;
-    // Stel stem in alleen als gevonden — anders gebruikt iOS de standaard nl stem
-    if (_nlVoice) utter.voice = _nlVoice;
-    window.speechSynthesis.speak(utter);
-  } catch(e) {}
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang   = "nl-BE";   // Ellen is nl-BE
+  utter.rate   = 0.85;
+  utter.pitch  = 1.1;
+  utter.volume = 1.0;
+  if (_nlVoice) utter.voice = _nlVoice;
+  window.speechSynthesis.speak(utter);
 }
 
 /* ─────────────────────────────────────────
@@ -633,10 +620,9 @@ objectBtn.addEventListener("pointerdown", (ev) => {
   objectBtn.classList.remove("wiggle","entrance");
   void objectBtn.offsetWidth;
   objectBtn.classList.add("wiggle");
-  // speak() EERST aanroepen — iOS koppelt speech aan de gebruikersinteractie
+  // iOS: speech EERST en direct vanuit tap, beep daarna met kleine delay
   speak(current.name);
-  beep(current.speech);
-  chime();
+  setTimeout(() => { beep(current.speech); chime(); }, 120);
   burst(ev.clientX, ev.clientY);
   curtain.classList.add("flash");
   setTimeout(() => curtain.classList.remove("flash"), 250);
@@ -691,9 +677,8 @@ const startBtn      = document.getElementById("startBtn");
 
 function startGame() {
   ensureAudio();
-  // speak() direct vanuit tap — geen setTimeout
   speak("__welkom__");
-  beep("pling");
+  setTimeout(() => beep("pling"), 120);
   welcomeScreen.classList.add("hiding");
   welcomeScreen.addEventListener("animationend", () => {
     welcomeScreen.style.display = "none";
