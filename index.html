@@ -95,8 +95,40 @@
       left: 50%; transform: translateX(-50%);
       background: var(--card); padding: 9px 20px;
       border-radius: 999px; font-size: clamp(15px,2.4vw,19px);
-      font-weight: 600; color: var(--ink); opacity: .85;
+      font-weight: 600; color: var(--ink); opacity: .6;
       box-shadow: 0 4px 16px rgba(0,0,0,.08); white-space: nowrap;
+      transition: opacity 1s ease;
+    }
+    .hint.hidden { opacity: 0; pointer-events: none; }
+
+    /* ── PRAISE POPUP ── */
+    .praise-pop {
+      position: fixed; z-index: 11; pointer-events: none;
+      left: 50%; top: 30%;
+      transform: translateX(-50%) scale(0);
+      font-size: clamp(48px,10vw,88px);
+      font-weight: 900; color: #fff;
+      text-shadow: 0 4px 20px rgba(0,0,0,.25);
+      animation: praisePop .8s cubic-bezier(.34,1.56,.64,1) forwards;
+      white-space: nowrap;
+    }
+    @keyframes praisePop {
+      0%   { transform:translateX(-50%) scale(0) rotate(-8deg); opacity:0; }
+      40%  { transform:translateX(-50%) scale(1.1) rotate(3deg);  opacity:1; }
+      70%  { transform:translateX(-50%) scale(.95) rotate(-1deg); opacity:1; }
+      100% { transform:translateX(-50%) scale(1) rotate(0deg); opacity:0; }
+    }
+
+    /* ── IDLE SPARKLE ── */
+    .idle-spark {
+      position: fixed; pointer-events: none; z-index: 5;
+      font-size: clamp(28px,5vw,44px);
+      animation: idleSpark 1.2s cubic-bezier(.22,.68,0,1.1) forwards;
+    }
+    @keyframes idleSpark {
+      0%   { transform:translate(-50%,-50%) scale(0); opacity:0; }
+      30%  { opacity:1; }
+      100% { transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.4); opacity:0; }
     }
 
     /* ── STAGE ── */
@@ -357,7 +389,10 @@
     <span class="flower">🌸</span>
   </div>
 
-  <div class="hint">Tik op het plaatje 👆</div>
+  <div class="hint" id="hint">Tik op het plaatje 👆</div>
+
+  <!-- TAP ANYWHERE OVERLAY — heel scherm tappable voor peuters -->
+  <div id="tapOverlay" style="position:absolute;inset:0;z-index:6;"></div>
 
   <div class="stage">
     <div class="object-wrap">
@@ -555,6 +590,67 @@ function burst(x, y) {
 }
 
 /* ─────────────────────────────────────────
+   PRAISE POPUP
+───────────────────────────────────────── */
+const praiseWords = ["🌟 Hoera!", "💛 Goed zo!", "✨ Super!", "🎉 Bravo!", "🌈 Wauw!", "🐰 Knap!"];
+let lastPraise = -1;
+
+function showPraise() {
+  let idx;
+  do { idx = rand(praiseWords.length); } while (idx === lastPraise);
+  lastPraise = idx;
+  const el = document.createElement("div");
+  el.className = "praise-pop";
+  el.textContent = praiseWords[idx];
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 850);
+}
+
+/* ─────────────────────────────────────────
+   IDLE SPARKLES — na 5s stilte kleine vonkjes om aandacht te trekken
+───────────────────────────────────────── */
+let idleTimer = null;
+
+function resetIdleTimer() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(fireIdleSparkles, 5000);
+}
+
+function fireIdleSparkles() {
+  const sparks = ["✨","⭐","🌟","💛","🌸","💫"];
+  const rect = objectBtn.getBoundingClientRect();
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top + rect.height/2;
+  for (let i = 0; i < 5; i++) {
+    setTimeout(() => {
+      const el = document.createElement("div");
+      el.className = "idle-spark";
+      const dx = (Math.random()*200-100).toFixed(0)+"px";
+      const dy = (Math.random()*200-100).toFixed(0)+"px";
+      el.style.cssText = `left:${cx}px;top:${cy}px;--dx:${dx};--dy:${dy};`;
+      el.textContent = sparks[rand(sparks.length)];
+      app.appendChild(el);
+      setTimeout(() => el.remove(), 1250);
+    }, i * 160);
+  }
+  // herhaal idle sparkles
+  idleTimer = setTimeout(fireIdleSparkles, 4000);
+}
+
+/* ─────────────────────────────────────────
+   HINT — verdwijnt na eerste tik
+───────────────────────────────────────── */
+const hintEl = document.getElementById("hint");
+let hintShown = true;
+
+function hideHint() {
+  if (hintShown) {
+    hintShown = false;
+    hintEl.classList.add("hidden");
+  }
+}
+
+/* ─────────────────────────────────────────
    GAME LOGIC
 ───────────────────────────────────────── */
 function chooseNext(animate = true) {
@@ -574,22 +670,41 @@ function chooseNext(animate = true) {
     objectBtn.classList.add("entrance");
     objectBtn.addEventListener("animationend", () => objectBtn.classList.remove("entrance"), { once:true });
   }
+  resetIdleTimer();
 }
 
-objectBtn.addEventListener("pointerdown", (ev) => {
+function handleTap(ev) {
   if (busy) return;
   busy = true;
-  ensureAudio();
+  hideHint();
+  resetIdleTimer();
+
+  const x = ev.clientX ?? window.innerWidth/2;
+  const y = ev.clientY ?? window.innerHeight/2;
+
   objectBtn.classList.remove("wiggle","entrance");
   void objectBtn.offsetWidth;
   objectBtn.classList.add("wiggle");
+
   speak(current.name);
   beep(current.speech);
   chime();
-  burst(ev.clientX, ev.clientY);
+  burst(x, y);
+  showPraise();
+
   curtain.classList.add("flash");
   setTimeout(() => curtain.classList.remove("flash"), 250);
-  setTimeout(() => { chooseNext(true); busy = false; }, 820);
+  setTimeout(() => { chooseNext(true); busy = false; }, 700);
+}
+
+// Heel scherm tappable — peuters tikken overal!
+const tapOverlay = document.getElementById("tapOverlay");
+tapOverlay.addEventListener("pointerdown", handleTap);
+
+// Ook de knop zelf (voor precisie)
+objectBtn.addEventListener("pointerdown", (ev) => {
+  ev.stopPropagation(); // voorkomt dubbele trigger
+  handleTap(ev);
 });
 
 nextBtn.addEventListener("click", () => { ensureAudio(); beep("soft"); chooseNext(true); });
@@ -656,6 +771,7 @@ phrases["__welkom__"] = ["Hallo Philippa!", "Veel plezier Philippa!", "Goed bezi
    INIT
 ───────────────────────────────────────── */
 chooseNext(false);
+resetIdleTimer();
 </script>
 
 <!-- Geluid via <audio> — geen WebAudio conflict met speech -->
