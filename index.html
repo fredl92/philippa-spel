@@ -409,23 +409,63 @@ const phrases = {
   "Kuikentje":   ["Piep piep, een kuikentje!","Wat een lief kuikentje!"],
 };
 
-speechSynthesis.addEventListener?.("voiceschanged", () => {}, { once: true });
+/* ── Voice cache: geladen zodra beschikbaar ── */
+let _nlVoice = null;
+
+function _pickVoice(voices) {
+  const pref = ["Siri","Fem","Ellen","Flo","Samantha","Xander"];
+  for (const p of pref) {
+    const v = voices.find(x => x.lang.startsWith("nl") && x.name.includes(p));
+    if (v) return v;
+  }
+  const fem = voices.find(x => x.lang.startsWith("nl") && /female|vrouw|fem/i.test(x.name));
+  if (fem) return fem;
+  return voices.find(x => x.lang.startsWith("nl")) || null;
+}
+
+function _loadVoices() {
+  const voices = speechSynthesis.getVoices();
+  if (voices.length) { _nlVoice = _pickVoice(voices); return true; }
+  return false;
+}
+
+// Safari vuurt voiceschanged meerdere keren — sla de beste stem op zodra ze beschikbaar zijn
+if ("speechSynthesis" in window) {
+  _loadVoices();
+  speechSynthesis.addEventListener("voiceschanged", () => { _loadVoices(); });
+}
 
 function speak(name) {
   if (!soundOn || !("speechSynthesis" in window)) return;
-  speechSynthesis.cancel();
+
   const list = phrases[name] || [name];
   const text = list[rand(list.length)];
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "nl-NL"; utter.rate = 0.78; utter.pitch = 1.15; utter.volume = 0.95;
-  const voices = speechSynthesis.getVoices();
-  const pref = ["Siri","Fem","Ellen","Flo","Samantha","Xander"];
-  let v = null;
-  for (const p of pref) { v = voices.find(x => x.lang.startsWith("nl") && x.name.includes(p)); if (v) break; }
-  if (!v) v = voices.find(x => x.lang.startsWith("nl") && /female|vrouw|fem/i.test(x.name));
-  if (!v) v = voices.find(x => x.lang.startsWith("nl"));
-  if (v) utter.voice = v;
-  setTimeout(() => speechSynthesis.speak(utter), 380);
+
+  function _doSpeak() {
+    speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang   = "nl-NL";
+    utter.rate   = 0.78;
+    utter.pitch  = 1.15;
+    utter.volume = 0.95;
+
+    // Gebruik gecachte stem, of probeer nog één keer te laden
+    if (!_nlVoice) _loadVoices();
+    if (_nlVoice) utter.voice = _nlVoice;
+
+    speechSynthesis.speak(utter);
+  }
+
+  // Als stemmen al geladen zijn: spreek direct (na chime-delay)
+  if (_nlVoice || speechSynthesis.getVoices().length > 0) {
+    setTimeout(_doSpeak, 420);
+  } else {
+    // Stemmen nog niet beschikbaar: wacht op voiceschanged
+    speechSynthesis.addEventListener("voiceschanged", () => {
+      _loadVoices();
+      setTimeout(_doSpeak, 420);
+    }, { once: true });
+  }
 }
 
 /* ─────────────────────────────────────────
